@@ -1,20 +1,21 @@
 {
-  "name": "@dog-ai/github-bot",
-  "description": "",
+  "name": "@dog-ai/github-wrapper",
+  "description": "A GitHub wrapper",
   "version": "0.0.0",
-  "main": "lib/github-bot.js",
+  "main": "lib/github-wrapper.js",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/dog-ai/github-bot.git"
+    "url": "git+https://github.com/dog-ai/github-wrapper.git"
   },
   "author": "Hugo Freire <hugo@dog.ai>",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/dog-ai/github-bot/issues"
+    "url": "https://github.com/dog-ai/github-wrapper/issues"
   },
-  "homepage": "https://github.com/dog-ai/github-bot#readme",
+  "homepage": "https://github.com/dog-ai/github-wrapper#readme",
   "dependencies": {
     "bluebird": "^3.4.6",
+    "github": "^9.0.0",
     "lodash": "^4.17.2"
   },
   "devDependencies": {

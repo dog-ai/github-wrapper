@@ -2,31 +2,31 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-describe('GitHubBot', () => {
+describe('GitHubWrapper', () => {
   let subject
-  let GitHubBot
+  let GitHubWrapper
 
   describe('when constructing', () => {
     before(() => {
-      GitHubBot = require('../src/github-bot')
+      GitHubWrapper = require('../src/github-wrapper')
     })
 
     it('should create a GitHub client with user API properties', () => {
-      subject = new GitHubBot()
+      subject = new GitHubWrapper()
 
       subject.github.should.have.deep.property('.users.get')
       subject.github.should.have.deep.property('.users.getOrgMemberships')
     })
 
     it('should create a GitHub client with repos API properties', () => {
-      subject = new GitHubBot()
+      subject = new GitHubWrapper()
 
       subject.github.should.have.deep.property('.repos.getAll')
       subject.github.should.have.deep.property('.repos.getCombinedStatus')
     })
 
     it('should create a GitHub client with pullRequests API properties', () => {
-      subject = new GitHubBot()
+      subject = new GitHubWrapper()
 
       subject.github.should.have.deep.property('.pullRequests.getAll')
       subject.github.should.have.deep.property('.pullRequests.merge')
@@ -39,11 +39,11 @@ describe('GitHubBot', () => {
     const options = { auth }
 
     before(() => {
-      GitHubBot = require('../src/github-bot')
+      GitHubWrapper = require('../src/github-wrapper')
     })
 
     it('should create a GitHub client with token authentication', () => {
-      subject = new GitHubBot(options)
+      subject = new GitHubWrapper(options)
 
       subject.github.auth.should.eql(auth)
     })
@@ -61,10 +61,10 @@ describe('GitHubBot', () => {
     before(() => {
       td.replace('github', function () { return github })
 
-      delete require.cache[ require.resolve('../src/github-bot') ]
-      GitHubBot = require('../src/github-bot')
+      delete require.cache[ require.resolve('../src/github-wrapper') ]
+      GitHubWrapper = require('../src/github-wrapper')
 
-      subject = new GitHubBot()
+      subject = new GitHubWrapper()
     })
 
     afterEach(() => td.reset())
@@ -90,10 +90,10 @@ describe('GitHubBot', () => {
     before(() => {
       td.replace('github', function () { return github })
 
-      delete require.cache[ require.resolve('../src/github-bot') ]
-      GitHubBot = require('../src/github-bot')
+      delete require.cache[ require.resolve('../src/github-wrapper') ]
+      GitHubWrapper = require('../src/github-wrapper')
 
-      subject = new GitHubBot()
+      subject = new GitHubWrapper()
     })
 
     afterEach(() => td.reset())
@@ -120,10 +120,10 @@ describe('GitHubBot', () => {
     before(() => {
       td.replace('github', function () { return github })
 
-      delete require.cache[ require.resolve('../src/github-bot') ]
-      GitHubBot = require('../src/github-bot')
+      delete require.cache[ require.resolve('../src/github-wrapper') ]
+      GitHubWrapper = require('../src/github-wrapper')
 
-      subject = new GitHubBot()
+      subject = new GitHubWrapper()
     })
 
     afterEach(() => td.reset())

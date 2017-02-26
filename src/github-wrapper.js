@@ -31,7 +31,7 @@ const all = function (fn, params) {
 
 const defaultOptions = { auth: {} }
 
-class GitHubBot {
+class GitHubWrapper {
   constructor (options = defaultOptions) {
     const { auth } = _.defaults(options, defaultOptions)
 
@@ -92,4 +92,4 @@ class GitHubBot {
   }
 }
 
-module.exports = GitHubBot
+module.exports = GitHubWrapper
