@@ -1,15 +1,19 @@
 language: node_js
 node_js:
-  - '6.3'
+- '6.3'
 cache:
   directories:
-    - node_modules
+  - node_modules
 notifications:
   email: false
   slack:
-    secure: aBSLceSDtTG9mcNahHsv60ptf8QKccXLK5wzQROw6BujEZyP6c8Ybn57bZiYzamQX3qoyWdHIgfq6LsP4j1R0ULO9UF5HBVjy9pt2x4lQbepp6fkrrlBe8jCvl1fCiYc1Z2th5qB8LGqiRPAGayu34sz8QM0d0rwMGmF+mQjPo+jatYHRAZeycF04zvhjkXLEXSRjx7S1dzPYgJLDNUcNDrV+Qrex86LjJKwLQgVCFxm1Q48TyY6c2y43dTsd/GOFmZ2i2Vct4WTtbUpsRicJcHORyy1UGx0pVUCH52Z4kJrX4OiMTp1mCVaippUn8VycuNwyNFR57bCvbisi6/PctLUX6oveJnm2WO9kVlGP6UeOo2l3MYO+VjM+0LH8Z0XDSZNNwVJ7qnO/MAZDDMYQZfLQUvx5KNjfPFaVSJRHaKU7qtBn2OfTPX6uO259I44jhIpIC9zECX32USNz3+s/nLW7ZTiK4sD2TR+U+xyhpRm/pFY2mNBC8BJCTVTabPYlOTkIgSXsFXirmBPlufMNrkrmRRxMtby3B1Ur0K19yIB3SpsmNcOcZ29quRVmaktiSCtcpOA2B/pwyoDy/GETi5382CZUu2dAQj6IdQIhEEcrnNn4iADGXpyWom7oFR6TgCwy0Pd9RZ+XBhO03XkrjwbnEMdB/eisKkaufj+16w=
+    rooms:
+      - secure: DkgD8m0GhZbUR2aaeZGRK8cqBbKFHSzzRK7txNNsqEQRx/+32BIOIYKj3WqdFawWMKJEsf4IG7SWawQD3x8QMA88EsvbikVvWLkmL++XhfPKq5js5sm4LO7HdltKvfiorL4HsvRTsVzjdY/EuSFv0tx76+29I7SQL0scWriE56frRrzUOs2Txvu/QUSJu+l37TakvnKvF/KessgqgPnO2jCj7EadOYsYJlIPRow1TjHIFen2Neab8ahn1vl02GU/da0r9EWjkjhV7mU3aNkHz/jZieJ8KEBU9ocAcXH1pLeQNl8/qn7h6vZ5xOJzQujzkvYZ2H4rzFFVh6mJwtiwn1nItQ82qIELF4lVQ0vJM41loHfqVxEt/eCsPlNu+R4kb7bAu8AVSg8q7rOiIExia1CQeOkYE8UX9L6achI7Jt7AXfMvteunc2oqMtcJVDVL8LUyJ+mLKsCXoI8TBGDOIOlpo/K+tL39+uLPe+N2t1RM7RtEfpGhgcj8H2LcPH6REhqxmkc61wZ/yklnGEIZRtyI3Ca2YL4Iv+4CR6/5rQdovlBC63Cb02Zghpb74Ywt7eXodltochLy8YaWGD9cHKhCquDkMdfRpzBic50aOXsA5ey+jfhTPBsjYFqyrtu9rOvNrxV1fIpNgDtIaOlReL+y1YtUC6FcDNM0W4auqEc=
+    on_success: never
+    on_failure: always
+    on_pull_requests: false
 before_script:
-  - 'npm prune'
+- npm prune
 after_success:
-  - 'npm run coveralls'
-  - 'npm run semantic-release'
+- npm run coveralls
+- npm run semantic-release
