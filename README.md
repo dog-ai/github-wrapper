@@ -13,7 +13,7 @@ A GitHub wrapper.
 
 ### How to install
 ```
-npm install @dog-ai/github-wrapper -g
+npm install @dog-ai/github-wrapper
 ```
 
 ### How to use
