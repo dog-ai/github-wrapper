@@ -8,7 +8,7 @@
     "url": "git+https://github.com/dog-ai/github-wrapper.git"
   },
   "author": "Hugo Freire <hugo@dog.ai>",
-  "license": "MIT",
+  "license": "UNLICENSED",
   "bugs": {
     "url": "https://github.com/dog-ai/github-wrapper/issues"
   },
@@ -36,6 +36,9 @@
     "pre-git": "^3.13.0",
     "standard": "^9.0.0-beta.0",
     "testdouble": "^1.11.1"
+  },
+  "publishConfig": {
+    "registry": "https://npm.exec.sh"
   },
   "config": {
     "pre-git": {

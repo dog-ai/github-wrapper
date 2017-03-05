@@ -13,5 +13,8 @@ td.config({
   promiseConstructor: Promise
 })
 
+const _ = require('lodash')
+
 global.should = chai.should()
 global.td = td
+global._ = _

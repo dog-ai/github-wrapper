@@ -87,7 +87,7 @@ describe('GitHubWrapper', () => {
       td.when(github.users.getOrgMemberships(), { ignoreExtraArgs: true }).thenResolve(page)
     })
 
-    before(() => {
+    beforeEach(() => {
       td.replace('github', function () { return github })
 
       delete require.cache[ require.resolve('../src/github-wrapper') ]
@@ -99,9 +99,85 @@ describe('GitHubWrapper', () => {
     afterEach(() => td.reset())
 
     it('should return organization', () => {
-      return subject.getUserOrganizations()
+      return subject.getUserOrgs()
         .then((result) => {
           result.should.contain(login)
+        })
+    })
+  })
+
+  describe('when getting organization repos', () => {
+    const github = { repos: td.object([ 'getAll' ]), hasNextPage: td.function() }
+    const login = 'my-owner'
+    const data = [ { owner: { login } } ]
+    const page = { data }
+
+    before(() => {
+      td.when(github.repos.getAll(), { ignoreExtraArgs: true })
+        .thenDo((params, callback) => callback(null, page))
+
+      td.when(github.hasNextPage(), { ignoreExtraArgs: true }).thenReturn(false)
+    })
+
+    beforeEach(() => {
+      td.replace('github', function () { return github })
+
+      delete require.cache[ require.resolve('../src/github-wrapper') ]
+      GitHubWrapper = require('../src/github-wrapper')
+
+      subject = new GitHubWrapper()
+    })
+
+    afterEach(() => td.reset())
+
+    it('should merge pull request', () => {
+      return subject.getOrgRepos(login)
+        .then((repos) => {
+          repos.should.be.eql(data)
+        })
+    })
+  })
+
+  describe('when getting repo pull requests by state', () => {
+    const github = {
+      pullRequests: td.object([ 'getAll' ]),
+      repos: td.object([ 'getCombinedStatus' ]),
+      hasNextPage: td.function()
+    }
+    const login = 'my-owner'
+    const repo = 'my-repo'
+    const state = 'my-state'
+    const sha = 'my-sha'
+    const pullRequestsData = [ { head: { sha } } ]
+    const pullRequestsPage = { data: pullRequestsData }
+    const combinedStatusData = {}
+    const combinedStatusPage = { data: combinedStatusData }
+
+    before(() => {
+      td.when(github.pullRequests.getAll(), { ignoreExtraArgs: true })
+        .thenDo((params, callback) => callback(null, pullRequestsPage))
+
+      td.when(github.repos.getCombinedStatus(), { ignoreExtraArgs: true })
+        .thenDo((params, callback) => callback(null, combinedStatusPage))
+
+      td.when(github.hasNextPage(), { ignoreExtraArgs: true }).thenReturn(false)
+    })
+
+    beforeEach(() => {
+      td.replace('github', function () { return github })
+
+      delete require.cache[ require.resolve('../src/github-wrapper') ]
+      GitHubWrapper = require('../src/github-wrapper')
+
+      subject = new GitHubWrapper()
+    })
+
+    afterEach(() => td.reset())
+
+    it('should merge pull request', () => {
+      return subject.getRepoPullRequestsByState(login, repo, state)
+        .then((pullRequests) => {
+          pullRequests.should.have.length(pullRequestsData.length)
         })
     })
   })
@@ -117,7 +193,7 @@ describe('GitHubWrapper', () => {
       td.when(github.pullRequests.merge({ owner, repo, number, sha })).thenResolve()
     })
 
-    before(() => {
+    beforeEach(() => {
       td.replace('github', function () { return github })
 
       delete require.cache[ require.resolve('../src/github-wrapper') ]

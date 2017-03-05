@@ -51,13 +51,13 @@ class GitHubWrapper {
       .then((page) => page.data)
   }
 
-  getUserOrganizations () {
+  getUserOrgs () {
     return this.github.users.getOrgMemberships({})
       .then((page) => page.data)
       .mapSeries((orgMembership) => orgMembership.organization.login)
   }
 
-  getOrganizationRepos (owner) {
+  getOrgRepos (owner) {
     return all.bind(this)(this.github.repos.getAll, { per_page: 100 })
       .then((repos) => _.filter(repos, { owner: { login: owner } }))
   }
