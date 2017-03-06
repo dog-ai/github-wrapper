@@ -90,6 +90,28 @@ class GitHubWrapper {
   mergePullRequest (owner, repo, number, sha) {
     return this.github.pullRequests.merge({ owner, repo, number, sha })
   }
+
+  mergeGreenkeeperPullRequests (owner) {
+    return this.getOrgRepos(owner)
+      .mapSeries((repo) => {
+        const name = repo.name
+
+        return this.getRepoPullRequestsByState(owner, name, 'open')
+          .mapSeries((pullRequest) => {
+            const isGreenkeeper = pullRequest.user.login === 'greenkeeper[bot]'
+            const isSuccess = pullRequest.combinedStatus[ 0 ].state === 'success'
+            const statuses = pullRequest.combinedStatus[ 0 ].statuses
+            const isVerified = _.find(statuses, { context: 'greenkeeper/verify', state: 'success' })
+
+            if (isGreenkeeper && isSuccess && isVerified) {
+              const number = pullRequest.number
+              const sha = pullRequest.sha
+              return this.mergePullRequest(owner, name, number, sha)
+                .catch((error) => console.error(error))
+            }
+          })
+      })
+  }
 }
 
 module.exports = GitHubWrapper
