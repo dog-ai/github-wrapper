@@ -1,6 +1,6 @@
 {
   "name": "@dog-ai/github-wrapper",
-  "description": "A GitHub wrapper",
+  "description": "A GitHub wrapper library",
   "version": "0.0.0",
   "main": "lib/github-wrapper.js",
   "repository": {
