@@ -1,4 +1,4 @@
-# A GitHub wrapper
+# A GitHub wrapper library
 
 [![JavaScript Style Guide](https://img.shields.io/badge/code%20style-standard-brightgreen.svg)](http://standardjs.com/)
 [![Build Status](https://travis-ci.org/dog-ai/github-wrapper.svg?branch=master)](https://travis-ci.org/dog-ai/github-wrapper)
@@ -6,7 +6,7 @@
 [![Greenkeeper badge](https://badges.greenkeeper.io/dog-ai/github-wrapper.svg)](https://greenkeeper.io/)
 [![](https://img.shields.io/github/release/dog-ai/github-wrapper.svg)](https://github.com/dog-ai/github-wrapper/releases)
 
-A GitHub wrapper.
+A GitHub wrapper library.
 
 ### Features
 * Supports [Bluebird](https://github.com/petkaantonov/bluebird) :bird: promises :white_check_mark:
