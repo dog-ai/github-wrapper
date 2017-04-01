@@ -14,6 +14,8 @@ notifications:
     on_pull_requests: false
 before_script:
 - npm prune
+install:
+  - npm install --access public
 after_success:
 - npm run coveralls
 - npm run semantic-release
