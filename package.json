@@ -37,9 +37,6 @@
     "standard": "9.0.0-beta.0",
     "testdouble": "1.11.1"
   },
-  "publishConfig": {
-    "registry": "https://npm.exec.sh"
-  },
   "config": {
     "pre-git": {
       "commit-msg": "conventional"
