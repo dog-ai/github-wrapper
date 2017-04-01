@@ -95,6 +95,7 @@ class GitHubWrapper {
     return this.getOrgRepos(owner)
       .mapSeries((repo) => {
         const name = repo.name
+        const mergedPullRequests = []
 
         return this.getRepoPullRequestsByState(owner, name, 'open')
           .mapSeries((pullRequest) => {
@@ -107,9 +108,18 @@ class GitHubWrapper {
               const number = pullRequest.number
               const sha = pullRequest.sha
               return this.mergePullRequest(owner, name, number, sha)
-                .catch((error) => console.error(error))
+                .then(() => mergedPullRequests.push({ owner, name, number, sha, success: true }))
+                .catch((error) => mergedPullRequests.push({
+                  owner,
+                  name,
+                  number,
+                  sha,
+                  success: false,
+                  error
+                }))
             }
           })
+          .then(() => mergedPullRequests)
       })
   }
 }

@@ -205,9 +205,7 @@ describe('GitHubWrapper', () => {
     afterEach(() => td.reset())
 
     it('should merge pull request', () => {
-      const result = subject.mergePullRequest(owner, repo, number, sha)
-
-      result.should.be.fullfiled // eslint-disable-line
+      return subject.mergePullRequest(owner, repo, number, sha)
     })
   })
 })
