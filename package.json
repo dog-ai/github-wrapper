@@ -14,28 +14,28 @@
   },
   "homepage": "https://github.com/dog-ai/github-wrapper#readme",
   "dependencies": {
-    "bluebird": "^3.4.6",
-    "github": "^9.0.0",
-    "lodash": "^4.17.2"
+    "bluebird": "3.4.6",
+    "github": "9.0.0",
+    "lodash": "4.17.2"
   },
   "devDependencies": {
-    "babel-cli": "^6.23.0",
-    "babel-eslint": "^7.1.1",
-    "babel-preset-es2015": "^6.22.0",
-    "chai": "^3.5.0",
-    "chai-as-promised": "^6.0.0",
-    "coveralls": "^2.11.16",
-    "eslint": "^3.15.0",
-    "eslint-config-standard": "^7.0.0-beta.0",
-    "eslint-plugin-mocha": "^4.8.0",
-    "eslint-plugin-promise": "^3.4.2",
-    "eslint-plugin-standard": "^2.0.1",
-    "istanbul": "^0.4.5",
-    "mocha": "^3.2.0",
-    "semantic-release": "^6.3.2",
-    "pre-git": "^3.13.0",
-    "standard": "^9.0.0-beta.0",
-    "testdouble": "^1.11.1"
+    "babel-cli": "6.23.0",
+    "babel-eslint": "7.1.1",
+    "babel-preset-es2015": "6.22.0",
+    "chai": "3.5.0",
+    "chai-as-promised": "6.0.0",
+    "coveralls": "2.11.16",
+    "eslint": "3.15.0",
+    "eslint-config-standard": "7.0.0",
+    "eslint-plugin-mocha": "4.8.0",
+    "eslint-plugin-promise": "3.4.2",
+    "eslint-plugin-standard": "2.0.1",
+    "istanbul": "0.4.5",
+    "mocha": "3.2.0",
+    "semantic-release": "6.3.2",
+    "pre-git": "3.13.0",
+    "standard": "9.0.0-beta.0",
+    "testdouble": "1.11.1"
   },
   "publishConfig": {
     "registry": "https://npm.exec.sh"
@@ -46,6 +46,7 @@
     }
   },
   "scripts": {
+    "commit": "./node_modules/.bin/commit-wizard",
     "clean": "rm -rf lib coverage",
     "lint": "./node_modules/.bin/eslint .",
     "coverage": "node_modules/.bin/istanbul cover --include-all-sources --root src --print detail ./node_modules/mocha/bin/_mocha -- --recursive test",
@@ -53,7 +54,6 @@
     "compile": "mkdir -p lib && ./node_modules/.bin/babel -d lib src/",
     "prepublish": "npm run compile",
     "coveralls": "cat ./coverage/lcov.info | ./node_modules/.bin/coveralls",
-    "semantic-release": "./node_modules/.bin/semantic-release pre && npm publish && node_modules/.bin/semantic-release post",
-    "commit": "./node_modules/.bin/commit-wizard"
+    "semantic-release": "./node_modules/.bin/semantic-release pre && npm publish && node_modules/.bin/semantic-release post"
   }
 }
