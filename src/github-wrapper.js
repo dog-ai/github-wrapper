@@ -92,10 +92,11 @@ class GitHubWrapper {
   }
 
   mergeGreenkeeperPullRequests (owner) {
+    const mergedPullRequests = []
+
     return this.getOrgRepos(owner)
       .mapSeries((repo) => {
         const name = repo.name
-        const mergedPullRequests = []
 
         return this.getRepoPullRequestsByState(owner, name, 'open')
           .mapSeries((pullRequest) => {
@@ -119,8 +120,10 @@ class GitHubWrapper {
                 }))
             }
           })
-          .then(() => mergedPullRequests)
+          .catch(() => {})
       })
+      .catch(() => {})
+      .finally(() => mergedPullRequests)
   }
 }
 
