@@ -94,32 +94,35 @@ class GitHubWrapper {
   mergeGreenkeeperPullRequests (owner) {
     const mergedPullRequests = []
 
+    const mergeGreenkeeperPullRequest = (owner, repoName, pullRequest) => {
+      const isGreenkeeper = pullRequest.user.login === 'greenkeeper[bot]'
+      const isSuccess = pullRequest.combinedStatus[ 0 ].state === 'success'
+      const statuses = pullRequest.combinedStatus[ 0 ].statuses
+      const isVerified = _.find(statuses, { context: 'greenkeeper/verify', state: 'success' })
+
+      if (isGreenkeeper && isSuccess && isVerified) {
+        const number = pullRequest.number
+        const sha = pullRequest.sha
+
+        return this.mergePullRequest(owner, repoName, number, sha)
+          .then(() => mergedPullRequests.push({ owner, repoName, number, sha, success: true }))
+          .catch((error) => mergedPullRequests.push({
+            owner,
+            repoName,
+            number,
+            sha,
+            success: false,
+            error
+          }))
+      }
+    }
+
     return this.getOrgRepos(owner)
       .mapSeries((repo) => {
-        const name = repo.name
+        const repoName = repo.name
 
-        return this.getRepoPullRequestsByState(owner, name, 'open')
-          .mapSeries((pullRequest) => {
-            const isGreenkeeper = pullRequest.user.login === 'greenkeeper[bot]'
-            const isSuccess = pullRequest.combinedStatus[ 0 ].state === 'success'
-            const statuses = pullRequest.combinedStatus[ 0 ].statuses
-            const isVerified = _.find(statuses, { context: 'greenkeeper/verify', state: 'success' })
-
-            if (isGreenkeeper && isSuccess && isVerified) {
-              const number = pullRequest.number
-              const sha = pullRequest.sha
-              return this.mergePullRequest(owner, name, number, sha)
-                .then(() => mergedPullRequests.push({ owner, name, number, sha, success: true }))
-                .catch((error) => mergedPullRequests.push({
-                  owner,
-                  name,
-                  number,
-                  sha,
-                  success: false,
-                  error
-                }))
-            }
-          })
+        return this.getRepoPullRequestsByState(owner, repoName, 'open')
+          .mapSeries((pullRequest) => mergeGreenkeeperPullRequest(owner, repoName, pullRequest))
           .catch(() => {})
       })
       .catch(() => {})

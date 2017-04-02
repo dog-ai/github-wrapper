@@ -2,7 +2,7 @@
   "name": "@dog-ai/github-wrapper",
   "description": "A GitHub wrapper library",
   "version": "0.0.0",
-  "main": "lib/github-wrapper.js",
+  "main": "lib/index.js",
   "repository": {
     "type": "git",
     "url": "git+https://github.com/dog-ai/github-wrapper.git"
