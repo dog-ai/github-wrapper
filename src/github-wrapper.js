@@ -125,8 +125,8 @@ class GitHubWrapper {
           .mapSeries((pullRequest) => mergeGreenkeeperPullRequest(owner, repoName, pullRequest))
           .catch(() => {})
       })
+      .then(() => mergedPullRequests)
       .catch(() => {})
-      .finally(() => mergedPullRequests)
   }
 }
 
