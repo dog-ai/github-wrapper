@@ -23,18 +23,18 @@ describe('GitHubWrapper', () => {
     })
 
     it('should create a GitHub client with user API properties', () => {
-      subject.github.should.have.deep.property('.users.get')
-      subject.github.should.have.deep.property('.users.getOrgMemberships')
+      subject.github.should.have.nested.property('.users.get')
+      subject.github.should.have.nested.property('.users.getOrgMemberships')
     })
 
     it('should create a GitHub client with repos API properties', () => {
-      subject.github.should.have.deep.property('.repos.getAll')
-      subject.github.should.have.deep.property('.repos.getCombinedStatus')
+      subject.github.should.have.nested.property('.repos.getAll')
+      subject.github.should.have.nested.property('.repos.getCombinedStatus')
     })
 
     it('should create a GitHub client with pullRequests API properties', () => {
-      subject.github.should.have.deep.property('.pullRequests.getAll')
-      subject.github.should.have.deep.property('.pullRequests.merge')
+      subject.github.should.have.nested.property('.pullRequests.getAll')
+      subject.github.should.have.nested.property('.pullRequests.merge')
     })
   })
 

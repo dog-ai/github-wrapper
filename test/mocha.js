@@ -2,6 +2,7 @@
  * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
+const _ = require('lodash')
 const Promise = require('bluebird')
 
 const chai = require('chai')
@@ -10,11 +11,10 @@ chai.config.includeStack = true
 
 const td = require('testdouble')
 td.config({
-  promiseConstructor: Promise
+  promiseConstructor: Promise,
+  ignoreWarnings: true
 })
 
-const _ = require('lodash')
-
+global._ = _
 global.should = chai.should()
 global.td = td
-global._ = _
