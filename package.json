@@ -14,7 +14,7 @@
   },
   "homepage": "https://github.com/dog-ai/github-wrapper#readme",
   "dependencies": {
-    "bluebird": "3.5.0",
+    "bluebird": "3.5.1",
     "github": "9.2.0",
     "lodash": "4.17.4"
   },
