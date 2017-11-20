@@ -4,22 +4,25 @@
 
 describe('GitHubWrapper', () => {
   let subject
-  let github
+  let GitHub
 
   before(() => {
-    github = td.constructor()
-    github.prototype.users = td.object([ 'get', 'getOrgMemberships' ])
-    github.prototype.repos = td.object([ 'getAll', 'getCombinedStatus' ])
-    github.prototype.hasNextPage = td.function()
-    github.prototype.pullRequests = td.object([ 'getAll', 'merge' ])
+    GitHub = td.constructor([ 'authenticate' ])
+    GitHub.prototype.users = td.object([ 'get', 'getOrgMemberships' ])
+    GitHub.prototype.repos = td.object([ 'getAll', 'getCombinedStatusForRef' ])
+    GitHub.prototype.hasNextPage = td.function()
+    GitHub.prototype.pullRequests = td.object([ 'getAll', 'merge' ])
   })
 
   afterEach(() => td.reset())
 
   describe('when constructing', () => {
+    const token = 'my-token'
+    const options = { github: { token } }
+
     beforeEach(() => {
       const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper()
+      subject = new GitHubWrapper(options)
     })
 
     it('should create a GitHub client with user API properties', () => {
@@ -29,7 +32,7 @@ describe('GitHubWrapper', () => {
 
     it('should create a GitHub client with repos API properties', () => {
       subject.github.should.have.nested.property('.repos.getAll')
-      subject.github.should.have.nested.property('.repos.getCombinedStatus')
+      subject.github.should.have.nested.property('.repos.getCombinedStatusForRef')
     })
 
     it('should create a GitHub client with pullRequests API properties', () => {
@@ -38,31 +41,32 @@ describe('GitHubWrapper', () => {
     })
   })
 
-  describe('when constructing with a GitHub personal token', () => {
+  describe('when constructing with a github personal token', () => {
     const token = 'my-token'
-    const auth = { type: 'token', token }
-    const options = { auth }
+    const options = { github: { type: 'token', token } }
 
     beforeEach(() => {
       const GitHubWrapper = require('../src/github-wrapper')
       subject = new GitHubWrapper(options)
     })
 
-    it('should create a GitHub client with token authentication', () => {
-      subject.github.auth.should.eql(auth)
+    it('should create a github client with token authentication', () => {
+      subject.github.auth.should.be.eql(options.github)
     })
   })
 
   describe('when getting user', () => {
+    const token = 'my-token'
+    const options = { github: { token } }
     const data = {}
     const page = { data }
 
     beforeEach(() => {
-      td.replace('github', github)
-      td.when(github.prototype.users.get(), { ignoreExtraArgs: true }).thenResolve(page)
+      td.replace('github', GitHub)
+      td.when(GitHub.prototype.users.get(), { ignoreExtraArgs: true }).thenResolve(page)
 
       const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper()
+      subject = new GitHubWrapper(options)
     })
 
     it('should return user', () => {
@@ -74,16 +78,18 @@ describe('GitHubWrapper', () => {
   })
 
   describe('when getting user organizations', () => {
+    const token = 'my-token'
+    const options = { github: { token } }
     const login = 'my-organization-login'
     const data = [ { organization: { login } } ]
     const page = { data }
 
     beforeEach(() => {
-      td.replace('github', github)
-      td.when(github.prototype.users.getOrgMemberships(), { ignoreExtraArgs: true }).thenResolve(page)
+      td.replace('github', GitHub)
+      td.when(GitHub.prototype.users.getOrgMemberships(), { ignoreExtraArgs: true }).thenResolve(page)
 
       const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper()
+      subject = new GitHubWrapper(options)
     })
 
     it('should return organization', () => {
@@ -95,17 +101,19 @@ describe('GitHubWrapper', () => {
   })
 
   describe('when getting organization repos', () => {
+    const token = 'my-token'
+    const options = { github: { token } }
     const login = 'my-owner'
     const data = [ { owner: { login } } ]
     const page = { data }
 
     beforeEach(() => {
-      td.replace('github', github)
-      td.when(github.prototype.repos.getAll(td.matchers.anything()), { ignoreExtraArgs: true }).thenCallback(null, page)
-      td.when(github.prototype.hasNextPage(), { ignoreExtraArgs: true }).thenReturn(false)
+      td.replace('github', GitHub)
+      td.when(GitHub.prototype.repos.getAll(td.matchers.anything()), { ignoreExtraArgs: true }).thenCallback(null, page)
+      td.when(GitHub.prototype.hasNextPage(), { ignoreExtraArgs: true }).thenReturn(false)
 
       const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper()
+      subject = new GitHubWrapper(options)
     })
 
     it('should merge pull request', () => {
@@ -117,6 +125,8 @@ describe('GitHubWrapper', () => {
   })
 
   describe('when getting repo pull requests by state', () => {
+    const token = 'my-token'
+    const options = { github: { token } }
     const login = 'my-owner'
     const repo = 'my-repo'
     const state = 'my-state'
@@ -127,15 +137,15 @@ describe('GitHubWrapper', () => {
     const combinedStatusPage = { data: combinedStatusData }
 
     beforeEach(() => {
-      td.replace('github', github)
-      td.when(github.prototype.pullRequests.getAll(td.matchers.anything()), { ignoreExtraArgs: true })
+      td.replace('github', GitHub)
+      td.when(GitHub.prototype.pullRequests.getAll(td.matchers.anything()), { ignoreExtraArgs: true })
         .thenCallback(null, pullRequestsPage)
-      td.when(github.prototype.repos.getCombinedStatus(td.matchers.anything()), { ignoreExtraArgs: true })
+      td.when(GitHub.prototype.repos.getCombinedStatusForRef(td.matchers.anything()), { ignoreExtraArgs: true })
         .thenCallback(null, combinedStatusPage)
-      td.when(github.prototype.hasNextPage(), { ignoreExtraArgs: true }).thenReturn(false)
+      td.when(GitHub.prototype.hasNextPage(), { ignoreExtraArgs: true }).thenReturn(false)
 
       const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper()
+      subject = new GitHubWrapper(options)
     })
 
     it('should merge pull request', () => {
@@ -147,17 +157,19 @@ describe('GitHubWrapper', () => {
   })
 
   describe('when merging pull request', () => {
+    const token = 'my-token'
+    const options = { github: { token } }
     const owner = 'my-owner'
     const repo = 'my-repo'
     const number = 'my-number'
     const sha = 'my-sha'
 
     beforeEach(() => {
-      td.replace('github', github)
-      td.when(github.prototype.pullRequests.merge({ owner, repo, number, sha })).thenResolve()
+      td.replace('github', GitHub)
+      td.when(GitHub.prototype.pullRequests.merge({ owner, repo, number, sha })).thenResolve()
 
       const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper()
+      subject = new GitHubWrapper(options)
     })
 
     it('should resolve promise', () => {
@@ -166,6 +178,8 @@ describe('GitHubWrapper', () => {
   })
 
   describe('when merging greenkeeper pull request', () => {
+    const token = 'my-token'
+    const options = { github: { token } }
     const owner = 'my-owner'
     const repoName = 'my-repo-name'
     const repo = { name: repoName }
@@ -185,7 +199,7 @@ describe('GitHubWrapper', () => {
 
     beforeEach(() => {
       const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper()
+      subject = new GitHubWrapper(options)
       subject.mergePullRequest = td.function()
       subject.getOrgRepos = td.function()
       subject.getRepoPullRequestsByState = td.function()

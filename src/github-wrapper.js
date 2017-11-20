@@ -18,8 +18,8 @@ const all = function (fn, params) {
 
       data = data.concat(page.data)
 
-      if (this.github.hasNextPage(page)) {
-        this.github.getNextPage(page, next)
+      if (this._github.hasNextPage(page)) {
+        this._github.getNextPage(page, next)
       } else {
         resolve(data)
       }
@@ -29,41 +29,49 @@ const all = function (fn, params) {
   })
 }
 
-const defaultOptions = { auth: {} }
+const defaultOptions = {
+  github: {
+    type: 'token'
+  }
+}
 
 class GitHubWrapper {
-  constructor (options = defaultOptions) {
-    const { auth } = _.defaults(options, defaultOptions)
+  constructor (options = {}) {
+    this._options = _.defaultsDeep({}, options, defaultOptions)
 
-    this.github = new GitHub({ Promise })
+    this._github = new GitHub({ Promise })
 
-    const type = auth.type
-    switch (type) {
+    switch (_.get(this._options, 'github.type')) {
       case 'token':
-        this.github.authenticate({ type, token: auth.token })
+        this._github.authenticate(_.get(this._options, 'github'))
+
         break
       default:
     }
   }
 
+  get github () {
+    return this._github
+  }
+
   getUser () {
-    return this.github.users.get({})
+    return this._github.users.get({})
       .then((page) => page.data)
   }
 
   getUserOrgs () {
-    return this.github.users.getOrgMemberships({})
+    return this._github.users.getOrgMemberships({})
       .then((page) => page.data)
       .mapSeries((orgMembership) => orgMembership.organization.login)
   }
 
   getOrgRepos (owner) {
-    return all.bind(this)(this.github.repos.getAll, { per_page: 100 })
+    return all.bind(this)(this._github.repos.getAll, { per_page: 100 })
       .then((repos) => _.filter(repos, { owner: { login: owner } }))
   }
 
   getRepoPullRequestsByState (owner, repo, state) {
-    return all.bind(this)(this.github.pullRequests.getAll, {
+    return all.bind(this)(this._github.pullRequests.getAll, {
       owner,
       repo,
       state,
@@ -73,7 +81,7 @@ class GitHubWrapper {
     })
       .mapSeries((pullRequest) => {
         const ref = pullRequest.head.sha
-        return all.bind(this)(this.github.repos.getCombinedStatus, {
+        return all.bind(this)(this._github.repos.getCombinedStatusForRef, {
           owner,
           repo,
           ref,
@@ -88,7 +96,7 @@ class GitHubWrapper {
   }
 
   mergePullRequest (owner, repo, number, sha) {
-    return this.github.pullRequests.merge({ owner, repo, number, sha })
+    return this._github.pullRequests.merge({ owner, repo, number, sha })
   }
 
   mergeGreenkeeperPullRequests (owner) {
