@@ -9,7 +9,7 @@
 [![Version](https://img.shields.io/npm/v/@dog-ai/github-wrapper.svg)](https://www.npmjs.com/package/@dog-ai/github-wrapper)
 [![Downloads](https://img.shields.io/npm/dt/@dog-ai/github-wrapper.svg)](https://www.npmjs.com/package/@dog-ai/github-wrapper) 
 
-A GitHub wrapper library.
+> A GitHub wrapper library.
 
 ### Features
 * Supports [Bluebird](https://github.com/petkaantonov/bluebird) :bird: promises :white_check_mark:
