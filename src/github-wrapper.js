@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2019, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const _ = require('lodash')
@@ -99,7 +99,7 @@ class GitHubWrapper {
     return this._github.pullRequests.merge({ owner, repo, number, sha })
   }
 
-  mergeGreenkeeperPullRequests (owner) {
+  mergeGreenkeeperPullRequests (owner, { repoConcurrency = 1, prConcurrency = 1 } = {}) {
     const mergedPullRequests = []
 
     const mergeGreenkeeperPullRequest = (owner, repoName, pullRequest) => {
@@ -126,13 +126,13 @@ class GitHubWrapper {
     }
 
     return this.getOrgRepos(owner)
-      .mapSeries((repo) => {
+      .map((repo) => {
         const repoName = repo.name
 
         return this.getRepoPullRequestsByState(owner, repoName, 'open')
-          .mapSeries((pullRequest) => mergeGreenkeeperPullRequest(owner, repoName, pullRequest))
+          .map((pullRequest) => mergeGreenkeeperPullRequest(owner, repoName, pullRequest), { concurrency: prConcurrency })
           .catch(() => {})
-      })
+      }, { concurrency: repoConcurrency })
       .then(() => mergedPullRequests)
       .catch(() => {})
   }
