@@ -9,7 +9,7 @@
 > A GitHub wrapper library.
 
 ### Features
-* Supports [Bluebird](https://github.com/petkaantonov/bluebird) :bird: promises :white_check_mark:
+* Uses [GitHub REST API client for JavaScript](https://github.com/octokit/rest.js) :octocat: :white_check_mark:
 
 ### How to install
 ```

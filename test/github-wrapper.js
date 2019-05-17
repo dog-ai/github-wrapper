@@ -1,224 +1,241 @@
 /*
- * Copyright (C) 2017, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2019, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 describe('GitHubWrapper', () => {
   let subject
-  let GitHub
-
-  before(() => {
-    GitHub = td.constructor([ 'authenticate' ])
-    GitHub.prototype.users = td.object([ 'get', 'getOrgMemberships' ])
-    GitHub.prototype.repos = td.object([ 'getAll', 'getCombinedStatusForRef' ])
-    GitHub.prototype.hasNextPage = td.function()
-    GitHub.prototype.pullRequests = td.object([ 'getAll', 'merge' ])
-  })
-
-  afterEach(() => td.reset())
-
-  describe('when constructing', () => {
-    const token = 'my-token'
-    const options = { github: { token } }
-
-    beforeEach(() => {
-      const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper(options)
-    })
-
-    it('should create a GitHub client with user API properties', () => {
-      subject.github.should.have.nested.property('.users.get')
-      subject.github.should.have.nested.property('.users.getOrgMemberships')
-    })
-
-    it('should create a GitHub client with repos API properties', () => {
-      subject.github.should.have.nested.property('.repos.getAll')
-      subject.github.should.have.nested.property('.repos.getCombinedStatusForRef')
-    })
-
-    it('should create a GitHub client with pullRequests API properties', () => {
-      subject.github.should.have.nested.property('.pullRequests.getAll')
-      subject.github.should.have.nested.property('.pullRequests.merge')
-    })
-  })
-
-  describe('when constructing with a github personal token', () => {
-    const token = 'my-token'
-    const options = { github: { type: 'token', token } }
-
-    beforeEach(() => {
-      const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper(options)
-    })
-
-    it('should create a github client with token authentication', () => {
-      subject.github.auth.should.be.eql(options.github)
-    })
-  })
+  let Octokit
 
   describe('when getting user', () => {
-    const token = 'my-token'
-    const options = { github: { token } }
     const data = {}
-    const page = { data }
 
     beforeEach(() => {
-      td.replace('github', GitHub)
-      td.when(GitHub.prototype.users.get(), { ignoreExtraArgs: true }).thenResolve(page)
+      Octokit = require('@octokit/rest')
+      jest.mock('@octokit/rest')
+
+      Octokit.mockImplementation(() => {
+        return {
+          users: {
+            getAuthenticated: jest.fn().mockImplementation(() => data)
+          }
+        }
+      })
 
       const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper(options)
+      subject = new GitHubWrapper()
     })
 
-    it('should return user', () => {
-      return subject.getUser()
-        .then((result) => {
-          result.should.be.equal(data)
+    it('should return user', async () => {
+      const result = await subject.getUser()
+
+      expect(result).toBe(data)
+    })
+  })
+
+  describe('when getting user repos', () => {
+    const data = []
+
+    beforeEach(() => {
+      Octokit = require('@octokit/rest')
+      jest.mock('@octokit/rest')
+
+      beforeEach(() => {
+        Octokit.mockImplementation(() => {
+          return {
+            paginate: jest.fn().mockImplementation(() => data),
+            repos: {
+              list: {
+                endpoint: {
+                  merge: jest.fn()
+                }
+              }
+            }
+          }
         })
+
+        const GitHubWrapper = require('../src/github-wrapper')
+        subject = new GitHubWrapper()
+      })
+
+      it('should get user repos', async () => {
+        const result = await subject.getUserRepos()
+
+        expect(result).toEqual(data)
+      })
     })
   })
 
   describe('when getting user organizations', () => {
-    const token = 'my-token'
-    const options = { github: { token } }
-    const login = 'my-organization-login'
-    const data = [ { organization: { login } } ]
-    const page = { data }
+    const org = 'my-organization'
+    const data = [ { login: org } ]
 
     beforeEach(() => {
-      td.replace('github', GitHub)
-      td.when(GitHub.prototype.users.getOrgMemberships(), { ignoreExtraArgs: true }).thenResolve(page)
+      Octokit = require('@octokit/rest')
+      jest.mock('@octokit/rest')
+
+      Octokit.mockImplementation(() => {
+        return {
+          paginate: jest.fn().mockImplementation(() => data),
+          orgs: {
+            listForAuthenticatedUser: {
+              endpoint: {
+                merge: jest.fn()
+              }
+            }
+          }
+        }
+      })
 
       const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper(options)
+      subject = new GitHubWrapper()
     })
 
-    it('should return organization', () => {
-      return subject.getUserOrgs()
-        .then((result) => {
-          result.should.contain(login)
-        })
+    it('should return organization', async () => {
+      const result = await subject.getUserOrgs()
+
+      expect(result).toContain(org)
     })
   })
 
   describe('when getting organization repos', () => {
-    const token = 'my-token'
-    const options = { github: { token } }
-    const login = 'my-owner'
-    const data = [ { owner: { login } } ]
-    const page = { data }
+    const org = 'my-org'
+    const data = []
 
     beforeEach(() => {
-      td.replace('github', GitHub)
-      td.when(GitHub.prototype.repos.getAll(td.matchers.anything()), { ignoreExtraArgs: true }).thenCallback(null, page)
-      td.when(GitHub.prototype.hasNextPage(), { ignoreExtraArgs: true }).thenReturn(false)
+      Octokit = require('@octokit/rest')
+      jest.mock('@octokit/rest')
+
+      Octokit.mockImplementation(() => {
+        return {
+          paginate: jest.fn().mockImplementation(() => data),
+          repos: {
+            listForOrg: {
+              endpoint: {
+                merge: jest.fn()
+              }
+            }
+          }
+        }
+      })
 
       const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper(options)
+      subject = new GitHubWrapper()
     })
 
-    it('should merge pull request', () => {
-      return subject.getOrgRepos(login)
-        .then((repos) => {
-          repos.should.be.eql(data)
-        })
+    it('should get organization repos', async () => {
+      const result = await subject.getOrgRepos(org)
+
+      expect(result).toEqual(data)
     })
   })
 
   describe('when getting repo pull requests by state', () => {
-    const token = 'my-token'
-    const options = { github: { token } }
-    const login = 'my-owner'
+    const owner = 'my-owner'
     const repo = 'my-repo'
     const state = 'my-state'
     const sha = 'my-sha'
-    const pullRequestsData = [ { head: { sha } } ]
-    const pullRequestsPage = { data: pullRequestsData }
-    const combinedStatusData = {}
-    const combinedStatusPage = { data: combinedStatusData }
+    const data = [ { head: sha } ]
 
     beforeEach(() => {
-      td.replace('github', GitHub)
-      td.when(GitHub.prototype.pullRequests.getAll(td.matchers.anything()), { ignoreExtraArgs: true })
-        .thenCallback(null, pullRequestsPage)
-      td.when(GitHub.prototype.repos.getCombinedStatusForRef(td.matchers.anything()), { ignoreExtraArgs: true })
-        .thenCallback(null, combinedStatusPage)
-      td.when(GitHub.prototype.hasNextPage(), { ignoreExtraArgs: true }).thenReturn(false)
+      Octokit = require('@octokit/rest')
+      jest.mock('@octokit/rest')
+
+      Octokit.mockImplementation(() => {
+        return {
+          paginate: jest.fn().mockImplementation(() => data),
+          pulls: {
+            list: {
+              endpoint: {
+                merge: jest.fn()
+              }
+            }
+          },
+          repos: {
+            getCombinedStatusForRef: jest.fn().mockImplementation()
+          }
+        }
+      })
 
       const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper(options)
+      subject = new GitHubWrapper()
     })
 
-    it('should merge pull request', () => {
-      return subject.getRepoPullRequestsByState(login, repo, state)
-        .then((pullRequests) => {
-          pullRequests.should.have.length(pullRequestsData.length)
-        })
+    it('should merge pull request', async () => {
+      const result = await subject.getRepoPullRequestsByState(owner, repo, state)
+
+      expect(result).toHaveLength(data.length)
     })
   })
 
   describe('when merging pull request', () => {
-    const token = 'my-token'
-    const options = { github: { token } }
     const owner = 'my-owner'
     const repo = 'my-repo'
     const number = 'my-number'
     const sha = 'my-sha'
 
     beforeEach(() => {
-      td.replace('github', GitHub)
-      td.when(GitHub.prototype.pullRequests.merge({ owner, repo, number, sha })).thenResolve()
+      Octokit = require('@octokit/rest')
+      jest.mock('@octokit/rest')
+
+      Octokit.mockImplementation(() => {
+        return {
+          pulls: {
+            merge: jest.fn()
+          }
+        }
+      })
 
       const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper(options)
+      subject = new GitHubWrapper()
     })
 
-    it('should resolve promise', () => {
+    it('should merge pull request', async () => {
       return subject.mergePullRequest(owner, repo, number, sha)
     })
   })
 
-  describe('when merging greenkeeper pull request', () => {
-    const token = 'my-token'
-    const options = { github: { token } }
-    const owner = 'my-owner'
-    const repoName = 'my-repo-name'
-    const repo = { name: repoName }
-    const repos = [ repo ]
-    const number = 'my-number'
-    const sha = 'my-sha'
-    const pullRequest = {
-      user: { login: 'greenkeeper[bot]' },
-      number,
-      sha,
-      combinedStatus: [ {
-        state: 'success',
-        statuses: [ { context: 'greenkeeper/verify', state: 'success' } ]
-      } ]
-    }
-    const pullRequests = [ pullRequest ]
+  describe('when merging organization pull request by greenkeeper', () => {
+    const org = 'my-org'
+    const repos = [ { name: 'my-repo' } ]
+    const pulls = [ { head: { sha: 'my-sha' }, user: { login: 'greenkeeper[bot]' } } ]
+    const combinedStatus = [ { state: 'success', statuses: [ { context: 'greenkeeper/verify', state: 'success' } ] } ]
 
     beforeEach(() => {
-      const GitHubWrapper = require('../src/github-wrapper')
-      subject = new GitHubWrapper(options)
-      subject.mergePullRequest = td.function()
-      subject.getOrgRepos = td.function()
-      subject.getRepoPullRequestsByState = td.function()
+      Octokit = require('@octokit/rest')
+      jest.mock('@octokit/rest')
 
-      td.when(subject.getOrgRepos(owner)).thenResolve(repos)
-      td.when(subject.getRepoPullRequestsByState(owner, repoName, 'open')).thenResolve(pullRequests)
-      td.when(subject.mergePullRequest(owner, repoName, number, sha)).thenResolve()
+      const paginate = jest.fn()
+      paginate.mockReturnValueOnce(repos)
+      paginate.mockReturnValueOnce(pulls)
+
+      Octokit.mockImplementation(() => {
+        return {
+          paginate,
+          pulls: {
+            list: {
+              endpoint: {
+                merge: jest.fn()
+              }
+            },
+            merge: jest.fn()
+          },
+          repos: {
+            listForOrg: {
+              endpoint: {
+                merge: jest.fn()
+              }
+            },
+            getCombinedStatusForRef: jest.fn().mockImplementation(() => combinedStatus)
+          }
+        }
+      })
+
+      const GitHubWrapper = require('../src/github-wrapper')
+      subject = new GitHubWrapper()
     })
 
-    it('should resolve promise with merge pull request', () => {
-      return subject.mergeGreenkeeperPullRequests(owner)
-        .then((mergedPullRequests) => {
-          mergedPullRequests.should.be.lengthOf(1)
-          mergedPullRequests[ 0 ].owner.should.be.equal(owner)
-          mergedPullRequests[ 0 ].number.should.be.equal(number)
-          mergedPullRequests[ 0 ].repoName.should.be.equal(repoName)
-          mergedPullRequests[ 0 ].sha.should.be.equal(sha)
-          mergedPullRequests[ 0 ].success.should.be.equal(true)
-        })
+    it('should merge pull request', async () => {
+      return subject.mergeOrgGreenkeeperPullRequests(org)
     })
   })
 })

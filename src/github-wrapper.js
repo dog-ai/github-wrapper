@@ -3,114 +3,82 @@
  */
 
 const _ = require('lodash')
-const Promise = require('bluebird')
 
-const GitHub = require('github')
-
-const all = function (fn, params) {
-  return new Promise((resolve, reject) => {
-    let data = []
-
-    const next = (error, page) => {
-      if (error) {
-        return reject(error)
-      }
-
-      data = data.concat(page.data)
-
-      if (this._github.hasNextPage(page)) {
-        this._github.getNextPage(page, next)
-      } else {
-        resolve(data)
-      }
-    }
-
-    fn(params, next)
-  })
-}
+const Octokit = require('@octokit/rest')
 
 const defaultOptions = {
-  github: {
-    type: 'token'
-  }
+  octokit: {}
 }
 
 class GitHubWrapper {
   constructor (options = {}) {
     this._options = _.defaultsDeep({}, options, defaultOptions)
 
-    this._github = new GitHub({ Promise })
+    this._octokit = new Octokit(this._options.octokit)
+  }
 
-    switch (_.get(this._options, 'github.type')) {
-      case 'token':
-        this._github.authenticate(_.get(this._options, 'github'))
+  get octokit () {
+    return this._octokit
+  }
 
-        break
-      default:
+  async getUser () {
+    return this._octokit.users.getAuthenticated()
+  }
+
+  async getUserRepos () {
+    const options = this._octokit.repos.list.endpoint.merge({ affiliation: 'owner' })
+
+    const repos = await this._octokit.paginate(options)
+
+    return _.map(repos, 'name')
+  }
+
+  async getUserOrgs () {
+    const options = this._octokit.orgs.listForAuthenticatedUser.endpoint.merge()
+
+    const orgs = await this._octokit.paginate(options)
+
+    return _.map(orgs, 'login')
+  }
+
+  async getOrgRepos (org) {
+    const options = this._octokit.repos.listForOrg.endpoint.merge({ org })
+
+    const repos = await this._octokit.paginate(options)
+
+    return _.map(repos, 'name')
+  }
+
+  async getRepoPullRequestsByState (owner, repo, state) {
+    const options = this._octokit.pulls.list.endpoint.merge({ owner, repo, state })
+
+    const pulls = await this._octokit.paginate(options)
+
+    for (const pull of pulls) {
+      const ref = pull.head.sha
+
+      pull.combinedStatus = await this._octokit.repos.getCombinedStatusForRef({ owner, repo, ref })
     }
+
+    return pulls
   }
 
-  get github () {
-    return this._github
+  async mergePullRequest (owner, repo, number, sha) {
+    return this._octokit.pulls.merge({ owner, repo, pull_number: number, sha })
   }
 
-  getUser () {
-    return this._github.users.get({})
-      .then((page) => page.data)
-  }
-
-  getUserOrgs () {
-    return this._github.users.getOrgMemberships({})
-      .then((page) => page.data)
-      .mapSeries((orgMembership) => orgMembership.organization.login)
-  }
-
-  getOrgRepos (owner) {
-    return all.bind(this)(this._github.repos.getAll, { per_page: 100 })
-      .then((repos) => _.filter(repos, { owner: { login: owner } }))
-  }
-
-  getRepoPullRequestsByState (owner, repo, state) {
-    return all.bind(this)(this._github.pullRequests.getAll, {
-      owner,
-      repo,
-      state,
-      per_page: 100,
-      sort: 'created',
-      direction: 'asc'
-    })
-      .mapSeries((pullRequest) => {
-        const ref = pullRequest.head.sha
-        return all.bind(this)(this._github.repos.getCombinedStatusForRef, {
-          owner,
-          repo,
-          ref,
-          per_page: 100
-        })
-          .then((combinedStatus) => {
-            pullRequest.combinedStatus = combinedStatus
-
-            return pullRequest
-          })
-      })
-  }
-
-  mergePullRequest (owner, repo, number, sha) {
-    return this._github.pullRequests.merge({ owner, repo, number, sha })
-  }
-
-  mergeGreenkeeperPullRequests (owner, { repoConcurrency = 1, prConcurrency = 1 } = {}) {
+  async mergeOrgGreenkeeperPullRequests (org) {
     const mergedPullRequests = []
 
-    const mergeGreenkeeperPullRequest = (owner, repoName, pullRequest) => {
-      const isGreenkeeper = pullRequest.user.login === 'greenkeeper[bot]'
-      const isSuccess = pullRequest.combinedStatus[ 0 ].state === 'success'
-      const statuses = pullRequest.combinedStatus[ 0 ].statuses
+    const mergeGreenkeeperPullRequest = (owner, repoName, pull) => {
+      const isGreenkeeper = pull.user.login === 'greenkeeper[bot]'
+      const isSuccess = pull.combinedStatus[ 0 ].state === 'success'
+      const statuses = pull.combinedStatus[ 0 ].statuses
       const isVerified = _.find(statuses, { context: 'greenkeeper/verify', state: 'success' })
 
       if (isGreenkeeper && isSuccess && isVerified) {
-        const number = pullRequest.number
-        const sha = pullRequest.sha
+        const number = pull.number
+        const sha = pull.sha
 
         return this.mergePullRequest(owner, repoName, number, sha)
           .then(() => mergedPullRequests.push({ owner, repoName, number, sha, success: true }))
@@ -125,16 +93,19 @@ class GitHubWrapper {
       }
     }
 
-    return this.getOrgRepos(owner)
-      .map((repo) => {
-        const repoName = repo.name
+    const repos = await this.getOrgRepos(org)
 
-        return this.getRepoPullRequestsByState(owner, repoName, 'open')
-          .map((pullRequest) => mergeGreenkeeperPullRequest(owner, repoName, pullRequest), { concurrency: prConcurrency })
-          .catch(() => {})
-      }, { concurrency: repoConcurrency })
-      .then(() => mergedPullRequests)
-      .catch(() => {})
+    for (const repo of repos) {
+      const pulls = await this.getRepoPullRequestsByState(org, repo.name, 'open')
+
+      for (const pull of pulls) {
+        mergeGreenkeeperPullRequest(org, repo.name, pull)
+
+        mergedPullRequests.push(pull)
+      }
+    }
+
+    return mergedPullRequests
   }
 }
 
