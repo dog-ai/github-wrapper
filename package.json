@@ -17,7 +17,7 @@
   },
   "homepage": "https://github.com/dog-ai/github-wrapper#readme",
   "dependencies": {
-    "@octokit/rest": "16.25.5",
+    "@octokit/rest": "16.26.0",
     "lodash": "4.17.11"
   },
   "devDependencies": {
