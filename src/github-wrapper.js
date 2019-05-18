@@ -39,7 +39,7 @@ const mergeGreenkeeperPullRequests = async function (owner, repos) {
     openedPulls += pulls.length
 
     for (const pull of pulls) {
-      const mergedPull = await mergeGreenkeeperPullRequest(owner, repo, pull)
+      const mergedPull = await mergeGreenkeeperPullRequest.bind(this)(owner, repo, pull)
 
       if (mergedPull) {
         openedPulls--
@@ -63,9 +63,9 @@ class GitHubWrapper {
   }
 
   async getUser () {
-    const { data } = await this._octokit.users.getAuthenticated()
+    const { data: { login } } = await this._octokit.users.getAuthenticated()
 
-    return data
+    return login
   }
 
   async getUserRepos () {
@@ -111,27 +111,14 @@ class GitHubWrapper {
     return this._octokit.pulls.merge({ owner, repo, pull_number: number, sha })
   }
 
-  async mergeUserGreenkeeperPullRequests () {
-    const login = await this.getUser()
-    const repos = await this.getUserRepos()
+  async mergeGreenkeeperPullRequests (org) {
+    const repos = !org ? await this.getUserRepos() : await this.getOrgRepos(org)
+    const owner = !org ? await this.getUser() : org
 
-    const { openedPulls, mergedPulls } = await mergeGreenkeeperPullRequests.bind(this)(login, repos)
-
-    return {
-      login,
-      availableRepos: repos.length,
-      openedPulls,
-      mergedPulls
-    }
-  }
-
-  async mergeOrgGreenkeeperPullRequests (org) {
-    const repos = await this.getOrgRepos(org)
-
-    const { openedPulls, mergedPulls } = await mergeGreenkeeperPullRequests.bind(this)(org, repos)
+    const { openedPulls, mergedPulls } = await mergeGreenkeeperPullRequests.bind(this)(owner, repos)
 
     return {
-      org,
+      owner,
       availableRepos: repos.length,
       openedPulls,
       mergedPulls
