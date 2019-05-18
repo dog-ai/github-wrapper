@@ -10,6 +10,47 @@ const defaultOptions = {
   octokit: {}
 }
 
+const mergeGreenkeeperPullRequest = async function (owner, repo, pull) {
+  const isGreenkeeper = pull.user.login === 'greenkeeper[bot]'
+  const isSuccess = pull.combinedStatus.state === 'success'
+  const isVerified = _.find(pull.combinedStatus.statuses, { context: 'greenkeeper/verify', state: 'success' })
+
+  if (isGreenkeeper && isSuccess && isVerified) {
+    const number = pull.number
+    const sha = pull.head.sha
+    const url = pull.url
+
+    try {
+      await this.mergePullRequest(owner, repo, number, sha)
+
+      return { owner, repo, url, number, sha, success: true }
+    } catch (error) {
+      return { owner, repo, url, number, sha, success: false, error }
+    }
+  }
+}
+
+const mergeGreenkeeperPullRequests = async function (owner, repos) {
+  const mergedPulls = []
+  let openedPulls = 0
+
+  for (const repo of repos) {
+    const pulls = await this.getRepoPullRequestsByState(owner, repo, 'open')
+    openedPulls += pulls.length
+
+    for (const pull of pulls) {
+      const mergedPull = await mergeGreenkeeperPullRequest(owner, repo, pull)
+
+      if (mergedPull) {
+        openedPulls--
+        mergedPulls.push(mergedPull)
+      }
+    }
+  }
+
+  return { openedPulls, mergedPulls }
+}
+
 class GitHubWrapper {
   constructor (options = {}) {
     this._options = _.defaultsDeep({}, options, defaultOptions)
@@ -22,7 +63,9 @@ class GitHubWrapper {
   }
 
   async getUser () {
-    return this._octokit.users.getAuthenticated()
+    const { data } = await this._octokit.users.getAuthenticated()
+
+    return data
   }
 
   async getUserRepos () {
@@ -57,7 +100,8 @@ class GitHubWrapper {
     for (const pull of pulls) {
       const ref = pull.head.sha
 
-      pull.combinedStatus = await this._octokit.repos.getCombinedStatusForRef({ owner, repo, ref })
+      const { data } = await this._octokit.repos.getCombinedStatusForRef({ owner, repo, ref })
+      pull.combinedStatus = data
     }
 
     return pulls
@@ -67,45 +111,31 @@ class GitHubWrapper {
     return this._octokit.pulls.merge({ owner, repo, pull_number: number, sha })
   }
 
-  async mergeOrgGreenkeeperPullRequests (org) {
-    const mergedPullRequests = []
+  async mergeUserGreenkeeperPullRequests () {
+    const login = await this.getUser()
+    const repos = await this.getUserRepos()
 
-    const mergeGreenkeeperPullRequest = (owner, repoName, pull) => {
-      const isGreenkeeper = pull.user.login === 'greenkeeper[bot]'
-      const isSuccess = pull.combinedStatus[ 0 ].state === 'success'
-      const statuses = pull.combinedStatus[ 0 ].statuses
-      const isVerified = _.find(statuses, { context: 'greenkeeper/verify', state: 'success' })
+    const { openedPulls, mergedPulls } = await mergeGreenkeeperPullRequests.bind(this)(login, repos)
 
-      if (isGreenkeeper && isSuccess && isVerified) {
-        const number = pull.number
-        const sha = pull.sha
-
-        return this.mergePullRequest(owner, repoName, number, sha)
-          .then(() => mergedPullRequests.push({ owner, repoName, number, sha, success: true }))
-          .catch((error) => mergedPullRequests.push({
-            owner,
-            repoName,
-            number,
-            sha,
-            success: false,
-            error
-          }))
-      }
+    return {
+      login,
+      availableRepos: repos.length,
+      openedPulls,
+      mergedPulls
     }
+  }
 
+  async mergeOrgGreenkeeperPullRequests (org) {
     const repos = await this.getOrgRepos(org)
 
-    for (const repo of repos) {
-      const pulls = await this.getRepoPullRequestsByState(org, repo.name, 'open')
+    const { openedPulls, mergedPulls } = await mergeGreenkeeperPullRequests.bind(this)(org, repos)
 
-      for (const pull of pulls) {
-        mergeGreenkeeperPullRequest(org, repo.name, pull)
-
-        mergedPullRequests.push(pull)
-      }
+    return {
+      org,
+      availableRepos: repos.length,
+      openedPulls,
+      mergedPulls
     }
-
-    return mergedPullRequests
   }
 }
 
