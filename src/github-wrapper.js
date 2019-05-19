@@ -10,12 +10,32 @@ const defaultOptions = {
   octokit: {}
 }
 
+const parallelLimit = async (funcList, limit = 1) => {
+  let inFlight = new Set()
+
+  return funcList.map(async (func, i) => {
+    // Hold the loop by another loop
+    // while the next promise resolves
+    while (inFlight.size >= limit) {
+      // eslint-disable-next-line promise/no-native
+      await Promise.race(inFlight)
+    }
+
+    const promise = func()
+    // Add promise to inFlight Set
+    inFlight.add(promise)
+    // Delete promise from Set when it is done
+    await promise
+    inFlight.delete(promise)
+  })
+}
+
 const mergeGreenkeeperPullRequest = async function (owner, repo, pull) {
   const isGreenkeeper = pull.user.login === 'greenkeeper[bot]'
   const isSuccess = pull.combinedStatus.state === 'success'
   const isVerified = _.find(pull.combinedStatus.statuses, { context: 'greenkeeper/verify', state: 'success' })
 
-  if (isGreenkeeper && isSuccess && isVerified) {
+  if (isGreenkeeper && isVerified && isSuccess) {
     const number = pull.number
     const sha = pull.head.sha
     const url = pull.url
@@ -30,25 +50,31 @@ const mergeGreenkeeperPullRequest = async function (owner, repo, pull) {
   }
 }
 
-const mergeGreenkeeperPullRequests = async function (owner, repos) {
+const mergeGreenkeeperPullRequests = async function (owner, repos, { repoConcurrency, pullConcurrency }) {
   const mergedPulls = []
-  let openedPulls = 0
 
-  for (const repo of repos) {
-    const pulls = await this.getRepoPullRequestsByState(owner, repo, 'open')
-    openedPulls += pulls.length
+  const handlePull = async (repo, pull) => {
+    const mergedPull = await mergeGreenkeeperPullRequest.bind(this)(owner, repo, pull)
 
-    for (const pull of pulls) {
-      const mergedPull = await mergeGreenkeeperPullRequest.bind(this)(owner, repo, pull)
-
-      if (mergedPull) {
-        openedPulls--
-        mergedPulls.push(mergedPull)
-      }
+    if (mergedPull) {
+      mergedPulls.push(mergedPull)
     }
   }
 
-  return { openedPulls, mergedPulls }
+  const handleRepo = async (repo) => {
+    const pulls = await this.getRepoPullRequestsByState(owner, repo, 'open')
+
+    const promises = await parallelLimit(pulls.map((pull) => handlePull.bind(this, repo, pull)), pullConcurrency)
+
+    // eslint-disable-next-line promise/no-native
+    await Promise.all(promises)
+  }
+
+  const promises = await parallelLimit(repos.map((repo) => handleRepo.bind(this, repo)), repoConcurrency)
+  // eslint-disable-next-line promise/no-native
+  await Promise.all(promises)
+
+  return { mergedPulls }
 }
 
 class GitHubWrapper {
@@ -111,11 +137,11 @@ class GitHubWrapper {
     return this._octokit.pulls.merge({ owner, repo, pull_number: number, sha })
   }
 
-  async mergeGreenkeeperPullRequests (org) {
+  async mergeGreenkeeperPullRequests (org, options = { repoConcurrency: 1, pullConcurrency: 1 }) {
     const repos = !org ? await this.getUserRepos() : await this.getOrgRepos(org)
     const owner = !org ? await this.getUser() : org
 
-    const { openedPulls, mergedPulls } = await mergeGreenkeeperPullRequests.bind(this)(owner, repos)
+    const { openedPulls, mergedPulls } = await mergeGreenkeeperPullRequests.bind(this)(owner, repos, options)
 
     return {
       owner,
