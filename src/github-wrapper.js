@@ -88,7 +88,7 @@ const mergeGreenkeeperPullRequests = async function (owner, repos, { repoConcurr
     try {
       await mergeGreenkeeperPullRequest.bind(this)(owner, repo, pull)
     } catch (error) {
-      this.emit('error', error)
+      this.emit('error', error, owner, repo, pull)
     }
   }
 
@@ -192,9 +192,7 @@ class GitHubWrapper extends EventEmitter {
 
       return data
     } catch (error) {
-      this.emit('pulls:create:error', error, owner, repo, title, head, base)
-
-      throw error
+      throw new Error(_.get(error, 'errors[0].message', error.message))
     }
   }
 
@@ -204,9 +202,7 @@ class GitHubWrapper extends EventEmitter {
 
       this.emit('pulls:close', owner, repo, number)
     } catch (error) {
-      this.emit('pulls:close:error', error, owner, repo, number)
-
-      throw error
+      throw new Error(_.get(error, 'errors[0].message', error.message))
     }
   }
 
@@ -218,9 +214,7 @@ class GitHubWrapper extends EventEmitter {
 
       return data
     } catch (error) {
-      this.emit('pulls:merge:error', error, owner, repo, number, sha)
-
-      throw error
+      throw new Error(_.get(error, 'errors[0].message', error.message))
     }
   }
 

@@ -214,38 +214,6 @@ describe('GitHubWrapper', () => {
 
       expect(handler).toHaveBeenCalledTimes(1)
     })
-
-    describe('when it fails to create', () => {
-      beforeEach(() => {
-        handler = jest.fn()
-
-        Octokit = require('@octokit/rest')
-        jest.mock('@octokit/rest')
-
-        Octokit.mockImplementation(() => {
-          return {
-            pulls: {
-              update: jest.fn().mockImplementation(() => {
-                throw new Error()
-              })
-            }
-          }
-        })
-
-        const GitHubWrapper = require('../src/github-wrapper')
-        subject = new GitHubWrapper()
-
-        subject.on('pulls:create:error', handler)
-      })
-
-      it('should emit pulls:create:error event', async () => {
-        try {
-          await subject.createPullRequest(owner, repo, title, head, base)
-        } catch (error) {}
-
-        expect(handler).toHaveBeenCalledTimes(1)
-      })
-    })
   })
 
   describe('when closing pull request', () => {
@@ -288,38 +256,6 @@ describe('GitHubWrapper', () => {
       await subject.closePullRequest(owner, repo, number)
 
       expect(handler).toHaveBeenCalledTimes(1)
-    })
-
-    describe('when it fails to close', () => {
-      beforeEach(() => {
-        handler = jest.fn()
-
-        Octokit = require('@octokit/rest')
-        jest.mock('@octokit/rest')
-
-        Octokit.mockImplementation(() => {
-          return {
-            pulls: {
-              update: jest.fn().mockImplementation(() => {
-                throw new Error()
-              })
-            }
-          }
-        })
-
-        const GitHubWrapper = require('../src/github-wrapper')
-        subject = new GitHubWrapper()
-
-        subject.on('pulls:close:error', handler)
-      })
-
-      it('should emit pulls:close:error event', async () => {
-        try {
-          await subject.closePullRequest(owner, repo, number)
-        } catch (error) {}
-
-        expect(handler).toHaveBeenCalledTimes(1)
-      })
     })
   })
 
@@ -364,38 +300,6 @@ describe('GitHubWrapper', () => {
       await subject.mergePullRequest(owner, repo, number, sha)
 
       expect(handler).toHaveBeenCalledTimes(1)
-    })
-
-    describe('when it fails to merge', () => {
-      beforeEach(() => {
-        handler = jest.fn()
-
-        Octokit = require('@octokit/rest')
-        jest.mock('@octokit/rest')
-
-        Octokit.mockImplementation(() => {
-          return {
-            pulls: {
-              update: jest.fn().mockImplementation(() => {
-                throw new Error()
-              })
-            }
-          }
-        })
-
-        const GitHubWrapper = require('../src/github-wrapper')
-        subject = new GitHubWrapper()
-
-        subject.on('pulls:merge:error', handler)
-      })
-
-      it('should emit pulls:merge:error event', async () => {
-        try {
-          await subject.mergePullRequest(owner, repo, number, sha)
-        } catch (error) {}
-
-        expect(handler).toHaveBeenCalledTimes(1)
-      })
     })
   })
 
