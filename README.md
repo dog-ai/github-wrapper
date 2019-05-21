@@ -21,8 +21,8 @@ npm install @dog-ai/github-wrapper
 #### Use it in your app
 ```javascript
 const GitHub = require('github-wrapper')
-const github = new GitHub({ github: { token: 'my-token' } })
+const github = new GitHub({ octokit: { auth: 'my-personal-token' } })
 
-return github.getOrgRepos('dog-ai')
-    .mapSeries((repo) => console.log(repo.name))
+github.getOrgRepos('dog-ai')
+  .then((repos) => repos.forEach(({ name }) => console.log(name)))
 ```
