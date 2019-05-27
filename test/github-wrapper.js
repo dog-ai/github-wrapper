@@ -303,255 +303,127 @@ describe('GitHubWrapper', () => {
     })
   })
 
-  describe('when merging pull requests by greenkeeper', () => {
-    const repos = [ { name: 'my-repo' } ]
-    let merge
+  describe('when reviewing pull request', () => {
+    const owner = 'my-owner'
+    const repo = 'my-repo'
+    const number = 'my-number'
+    const commitId = 'my-commit-id'
+    const event = 'my-event'
+    let handler
 
     beforeEach(() => {
-      merge = jest.fn().mockImplementation(() => {
-        return { data: {} }
-      })
-    })
+      handler = jest.fn()
 
-    describe('when it was not verified by greenkeeper', () => {
-      const login = 'my-login'
-      const pulls = [ { head: { sha: 'my-sha' }, user: { login: 'greenkeeper[bot]' } } ]
-      const data = { state: 'success', statuses: [ ] }
+      Octokit = require('@octokit/rest')
+      jest.mock('@octokit/rest')
 
-      beforeEach(() => {
-        Octokit = require('@octokit/rest')
-        jest.mock('@octokit/rest')
-
-        const paginate = jest.fn()
-        paginate.mockReturnValueOnce(repos)
-        paginate.mockReturnValueOnce(pulls)
-
-        Octokit.mockImplementation(() => {
-          return {
-            paginate,
-            users: {
-              getAuthenticated: jest.fn().mockImplementation(() => {
-                return { data: { login } }
-              })
-            },
-            pulls: {
-              list: {
-                endpoint: {
-                  merge: jest.fn()
-                }
-              },
-              merge
-            },
-            repos: {
-              list: {
-                endpoint: {
-                  merge: jest.fn()
-                }
-              },
-              getCombinedStatusForRef: jest.fn().mockImplementation(() => {
-                return { data }
-              })
-            }
+      Octokit.mockImplementation(() => {
+        return {
+          pulls: {
+            createReview: jest.fn().mockImplementation(() => {
+              return {}
+            })
           }
-        })
-
-        const GitHubWrapper = require('../src/github-wrapper')
-        subject = new GitHubWrapper()
+        }
       })
 
-      it('should not merge pull request', async () => {
-        await subject.mergeGreenkeeperPullRequests()
+      const GitHubWrapper = require('../src/github-wrapper')
+      subject = new GitHubWrapper()
 
-        expect(merge).toHaveBeenCalledTimes(0)
-      })
+      subject.on('pulls:review', handler)
     })
 
-    describe('when user pull requests', () => {
-      const login = 'my-login'
-      const pulls = [ { head: { sha: 'my-sha' }, user: { login: 'greenkeeper[bot]' } } ]
-      const data = { state: 'success', statuses: [ { context: 'greenkeeper/verify', state: 'success' } ] }
+    afterEach(() => {
+      subject.removeAllListeners()
+    })
 
-      beforeEach(() => {
-        Octokit = require('@octokit/rest')
-        jest.mock('@octokit/rest')
+    it('should review pull request', async () => {
+      return subject.reviewPullRequest(owner, repo, number, commitId, event)
+    })
 
-        const paginate = jest.fn()
-        paginate.mockReturnValueOnce(repos)
-        paginate.mockReturnValueOnce(pulls)
+    it('should emit pulls:review event', async () => {
+      await subject.reviewPullRequest(owner, repo, number, commitId, event)
 
-        Octokit.mockImplementation(() => {
-          return {
-            paginate,
-            users: {
-              getAuthenticated: jest.fn().mockImplementation(() => {
-                return { data: { login } }
-              })
-            },
-            pulls: {
-              list: {
-                endpoint: {
-                  merge: jest.fn()
-                }
-              },
-              merge
-            },
-            repos: {
-              list: {
-                endpoint: {
-                  merge: jest.fn()
-                }
-              },
-              getCombinedStatusForRef: jest.fn().mockImplementation(() => {
-                return { data }
-              })
-            }
+      expect(handler).toHaveBeenCalledTimes(1)
+    })
+  })
+
+  describe('when requesting pull request review', () => {
+    const owner = 'my-owner'
+    const repo = 'my-repo'
+    const number = 'my-number'
+    let handler
+
+    beforeEach(() => {
+      handler = jest.fn()
+
+      Octokit = require('@octokit/rest')
+      jest.mock('@octokit/rest')
+
+      Octokit.mockImplementation(() => {
+        return {
+          pulls: {
+            createReviewRequest: jest.fn().mockImplementation(() => {
+              return {}
+            })
           }
-        })
-
-        const GitHubWrapper = require('../src/github-wrapper')
-        subject = new GitHubWrapper()
+        }
       })
 
-      it('should merge pull request', async () => {
-        await subject.mergeGreenkeeperPullRequests()
+      const GitHubWrapper = require('../src/github-wrapper')
+      subject = new GitHubWrapper()
 
-        expect(merge).toHaveBeenCalledTimes(1)
-      })
+      subject.on('pulls:review:request', handler)
     })
 
-    describe('when organization pull requests', () => {
-      const org = 'my-org'
-      const pulls = [ { head: { sha: 'my-sha' }, user: { login: 'greenkeeper[bot]' } } ]
-      const data = { state: 'success', statuses: [ { context: 'greenkeeper/verify', state: 'success' } ] }
-
-      beforeEach(() => {
-        Octokit = require('@octokit/rest')
-        jest.mock('@octokit/rest')
-
-        const paginate = jest.fn()
-        paginate.mockReturnValueOnce(repos)
-        paginate.mockReturnValueOnce(pulls)
-
-        Octokit.mockImplementation(() => {
-          return {
-            paginate,
-            pulls: {
-              list: {
-                endpoint: {
-                  merge: jest.fn()
-                }
-              },
-              merge
-            },
-            repos: {
-              listForOrg: {
-                endpoint: {
-                  merge: jest.fn()
-                }
-              },
-              getCombinedStatusForRef: jest.fn().mockImplementation(() => {
-                return { data }
-              })
-            }
-          }
-        })
-
-        const GitHubWrapper = require('../src/github-wrapper')
-        subject = new GitHubWrapper()
-      })
-
-      it('should merge pull request', async () => {
-        await subject.mergeGreenkeeperPullRequests(org)
-
-        expect(merge).toHaveBeenCalledTimes(1)
-      })
+    afterEach(() => {
+      subject.removeAllListeners()
     })
 
-    describe('when pull request combined status is not success', () => {
-      const login = 'my-login'
-      const repo = 'my-repo'
-      const pulls = [ { head: { sha: 'my-sha' }, user: { login: 'greenkeeper[bot]' }, number: 0 } ]
-      const data = { state: 'failure', statuses: [ { context: 'greenkeeper/verify', state: 'success' } ] }
-      const comments = [ { user: { login: 'greenkeeper[bot]' }, body: `...${login}:${repo}/my-dependency-0.0.0)` } ]
-      let create
-      let addLabels
-      let update
+    it('should requesting pull request review', async () => {
+      return subject.requestPullRequestReview(owner, repo, number)
+    })
 
-      beforeEach(() => {
-        create = jest.fn().mockImplementation(() => {
-          return { data: {} }
-        })
-        addLabels = jest.fn()
-        update = jest.fn()
+    it('should emit pulls:review event', async () => {
+      await subject.requestPullRequestReview(owner, repo, number)
 
-        Octokit = require('@octokit/rest')
-        jest.mock('@octokit/rest')
+      expect(handler).toHaveBeenCalledTimes(1)
+    })
+  })
 
-        const paginate = jest.fn()
-        paginate.mockReturnValueOnce(repos)
-        paginate.mockReturnValueOnce(pulls)
-        paginate.mockReturnValueOnce(comments)
+  describe('when getting pull request comments', () => {
+    const owner = 'my-owner'
+    const repo = 'my-repo'
+    const number = 'my-number'
+    const data = []
 
-        Octokit.mockImplementation(() => {
-          return {
-            paginate,
-            users: {
-              getAuthenticated: jest.fn().mockImplementation(() => {
-                return { data: { login } }
-              })
-            },
-            pulls: {
-              create,
-              update,
-              list: {
-                endpoint: {
-                  merge: jest.fn()
-                }
-              }
-            },
-            repos: {
-              list: {
-                endpoint: {
-                  merge: jest.fn()
-                }
-              },
-              getCombinedStatusForRef: jest.fn().mockImplementation(() => {
-                return { data }
-              })
-            },
-            issues: {
-              addLabels,
-              listComments: {
-                endpoint: {
-                  merge: jest.fn()
-                }
+    beforeEach(() => {
+      Octokit = require('@octokit/rest')
+      jest.mock('@octokit/rest')
+
+      Octokit.mockImplementation(() => {
+        return {
+          paginate: jest.fn().mockImplementation(() => data),
+          issues: {
+            listComments: {
+              endpoint: {
+                merge: jest.fn().mockImplementation(() => {
+                  return {}
+                })
               }
             }
           }
-        })
-
-        const GitHubWrapper = require('../src/github-wrapper')
-        subject = new GitHubWrapper()
+        }
       })
 
-      it('should create a new pull request', async () => {
-        await subject.mergeGreenkeeperPullRequests()
+      const GitHubWrapper = require('../src/github-wrapper')
+      subject = new GitHubWrapper()
+    })
 
-        expect(create).toHaveBeenCalledTimes(1)
-      })
+    it('should getting pull request comments', async () => {
+      const result = await subject.getPullRequestComments(owner, repo, number)
 
-      it('should add greenkeeper label to pull request', async () => {
-        await subject.mergeGreenkeeperPullRequests()
-
-        expect(addLabels).toHaveBeenCalledTimes(1)
-      })
-
-      it('should close old pull request', async () => {
-        await subject.mergeGreenkeeperPullRequests()
-
-        expect(update).toHaveBeenCalledTimes(1)
-        expect(update).toHaveBeenCalledWith({ owner: login, repo, pull_number: pulls[ 0 ].number, state: 'closed' })
-      })
+      expect(result).toEqual(data)
     })
   })
 })
