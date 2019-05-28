@@ -2,8 +2,6 @@
  * Copyright (C) 2019, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
-const EventEmitter = require('events')
-
 const _ = require('lodash')
 
 const Octokit = require('@octokit/rest')
@@ -12,10 +10,8 @@ const defaultOptions = {
   octokit: {}
 }
 
-class GitHubWrapper extends EventEmitter {
+class GitHubWrapper {
   constructor (options = {}) {
-    super()
-
     this._options = _.defaultsDeep({}, options, defaultOptions)
 
     this._octokit = new Octokit(this._options.octokit)
@@ -74,8 +70,6 @@ class GitHubWrapper extends EventEmitter {
     try {
       const { data } = await this._octokit.pulls.create({ owner, repo, title, head, base })
 
-      this.emit('pulls:create', owner, repo, title, head, base)
-
       return data
     } catch (error) {
       throw new Error(_.get(error, 'errors[0].message', error.message))
@@ -85,8 +79,6 @@ class GitHubWrapper extends EventEmitter {
   async closePullRequest (owner, repo, number) {
     try {
       await this._octokit.pulls.update({ owner, repo, pull_number: number, state: 'closed' })
-
-      this.emit('pulls:close', owner, repo, number)
     } catch (error) {
       throw new Error(_.get(error, 'errors[0].message', error.message))
     }
@@ -104,8 +96,6 @@ class GitHubWrapper extends EventEmitter {
         merge_method: method
       })
 
-      this.emit('pulls:merge', owner, repo, number, sha, data, title, message, method)
-
       return data
     } catch (error) {
       throw new Error(_.get(error, 'errors[0].message', error.message))
@@ -121,8 +111,6 @@ class GitHubWrapper extends EventEmitter {
         commit_id: commitId,
         event
       })
-
-      this.emit('pulls:review', owner, repo, number, commitId, event)
     } catch (error) {
       throw new Error(_.get(error, 'errors[0].message', error.message))
     }
@@ -136,8 +124,6 @@ class GitHubWrapper extends EventEmitter {
         pull_number: number,
         reviewers: reviewers
       })
-
-      this.emit('pulls:review:request', owner, repo, number, reviewers)
     } catch (error) {
       throw new Error(_.get(error, 'errors[0].message', error.message))
     }

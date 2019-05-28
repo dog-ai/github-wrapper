@@ -177,11 +177,8 @@ describe('GitHubWrapper', () => {
     const title = 'my-title'
     const head = 'my-head'
     const base = 'my-base'
-    let handler
 
     beforeEach(() => {
-      handler = jest.fn()
-
       Octokit = require('@octokit/rest')
       jest.mock('@octokit/rest')
 
@@ -197,22 +194,10 @@ describe('GitHubWrapper', () => {
 
       const GitHubWrapper = require('../src/github-wrapper')
       subject = new GitHubWrapper()
-
-      subject.on('pulls:create', handler)
-    })
-
-    afterEach(() => {
-      subject.removeAllListeners()
     })
 
     it('should create pull request', async () => {
       return subject.createPullRequest(owner, repo, title, head, base)
-    })
-
-    it('should emit pulls:create event', async () => {
-      await subject.createPullRequest(owner, repo, title, head, base)
-
-      expect(handler).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -220,11 +205,8 @@ describe('GitHubWrapper', () => {
     const owner = 'my-owner'
     const repo = 'my-repo'
     const number = 0
-    let handler
 
     beforeEach(() => {
-      handler = jest.fn()
-
       Octokit = require('@octokit/rest')
       jest.mock('@octokit/rest')
 
@@ -240,22 +222,10 @@ describe('GitHubWrapper', () => {
 
       const GitHubWrapper = require('../src/github-wrapper')
       subject = new GitHubWrapper()
-
-      subject.on('pulls:close', handler)
-    })
-
-    afterEach(() => {
-      subject.removeAllListeners()
     })
 
     it('should close pull request', async () => {
       return subject.closePullRequest(owner, repo, number)
-    })
-
-    it('should emit pulls:close event', async () => {
-      await subject.closePullRequest(owner, repo, number)
-
-      expect(handler).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -264,11 +234,8 @@ describe('GitHubWrapper', () => {
     const repo = 'my-repo'
     const number = 'my-number'
     const sha = 'my-sha'
-    let handler
 
     beforeEach(() => {
-      handler = jest.fn()
-
       Octokit = require('@octokit/rest')
       jest.mock('@octokit/rest')
 
@@ -284,22 +251,10 @@ describe('GitHubWrapper', () => {
 
       const GitHubWrapper = require('../src/github-wrapper')
       subject = new GitHubWrapper()
-
-      subject.on('pulls:merge', handler)
-    })
-
-    afterEach(() => {
-      subject.removeAllListeners()
     })
 
     it('should merge pull request', async () => {
       return subject.mergePullRequest(owner, repo, number, sha)
-    })
-
-    it('should emit pulls:merge event', async () => {
-      await subject.mergePullRequest(owner, repo, number, sha)
-
-      expect(handler).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -309,11 +264,8 @@ describe('GitHubWrapper', () => {
     const number = 'my-number'
     const commitId = 'my-commit-id'
     const event = 'my-event'
-    let handler
 
     beforeEach(() => {
-      handler = jest.fn()
-
       Octokit = require('@octokit/rest')
       jest.mock('@octokit/rest')
 
@@ -329,22 +281,10 @@ describe('GitHubWrapper', () => {
 
       const GitHubWrapper = require('../src/github-wrapper')
       subject = new GitHubWrapper()
-
-      subject.on('pulls:review', handler)
-    })
-
-    afterEach(() => {
-      subject.removeAllListeners()
     })
 
     it('should review pull request', async () => {
       return subject.reviewPullRequest(owner, repo, number, commitId, event)
-    })
-
-    it('should emit pulls:review event', async () => {
-      await subject.reviewPullRequest(owner, repo, number, commitId, event)
-
-      expect(handler).toHaveBeenCalledTimes(1)
     })
   })
 
@@ -352,11 +292,8 @@ describe('GitHubWrapper', () => {
     const owner = 'my-owner'
     const repo = 'my-repo'
     const number = 'my-number'
-    let handler
 
     beforeEach(() => {
-      handler = jest.fn()
-
       Octokit = require('@octokit/rest')
       jest.mock('@octokit/rest')
 
@@ -372,22 +309,10 @@ describe('GitHubWrapper', () => {
 
       const GitHubWrapper = require('../src/github-wrapper')
       subject = new GitHubWrapper()
-
-      subject.on('pulls:review:request', handler)
-    })
-
-    afterEach(() => {
-      subject.removeAllListeners()
     })
 
     it('should requesting pull request review', async () => {
       return subject.requestPullRequestReview(owner, repo, number)
-    })
-
-    it('should emit pulls:review event', async () => {
-      await subject.requestPullRequestReview(owner, repo, number)
-
-      expect(handler).toHaveBeenCalledTimes(1)
     })
   })
 
