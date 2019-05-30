@@ -288,6 +288,40 @@ describe('GitHubWrapper', () => {
     })
   })
 
+  describe('when listing pull request reviews', () => {
+    const owner = 'my-owner'
+    const repo = 'my-repo'
+    const number = 'my-number'
+    const data = []
+
+    beforeEach(() => {
+      Octokit = require('@octokit/rest')
+      jest.mock('@octokit/rest')
+
+      Octokit.mockImplementation(() => {
+        return {
+          paginate: jest.fn().mockImplementation(() => data),
+          pulls: {
+            listReviews: {
+              endpoint: {
+                merge: jest.fn()
+              }
+            }
+          }
+        }
+      })
+
+      const GitHubWrapper = require('../src/github-wrapper')
+      subject = new GitHubWrapper()
+    })
+
+    it('should list pull request reviews', async () => {
+      const result = await subject.listPullRequestReviews(owner, repo, number)
+
+      expect(result).toEqual(data)
+    })
+  })
+
   describe('when requesting pull request review', () => {
     const owner = 'my-owner'
     const repo = 'my-repo'

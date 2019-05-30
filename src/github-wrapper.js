@@ -102,6 +102,12 @@ class GitHubWrapper {
     }
   }
 
+  async listPullRequestReviews (owner, repo, number) {
+    const options = this._octokit.pulls.listReviews.endpoint.merge({ owner, repo, pull_number: number })
+
+    return this._octokit.paginate(options)
+  }
+
   async reviewPullRequest (owner, repo, number, commitId, event) {
     try {
       await this._octokit.pulls.createReview({
