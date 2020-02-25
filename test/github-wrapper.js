@@ -146,7 +146,7 @@ describe('GitHubWrapper', () => {
         return {
           checks: {
             listForRef: jest.fn().mockImplementation(async () => {
-              return { data }
+              return { data: {} }
             })
           },
           paginate: jest.fn().mockImplementation(() => data),
