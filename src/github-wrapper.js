@@ -59,8 +59,11 @@ class GitHubWrapper {
     for (const pull of pulls) {
       const ref = pull.head.sha
 
-      const { data } = await this._octokit.repos.getCombinedStatusForRef({ owner, repo, ref })
-      pull.combinedStatus = data
+      pull.combinedStatus = await this._octokit.repos.getCombinedStatusForRef({ owner, repo, ref })
+        .then(({ data }) => data)
+
+      pull.checks = await this._octokit.checks.listForRef({ owner, repo, ref })
+        .then(({ data }) => data)
     }
 
     return pulls

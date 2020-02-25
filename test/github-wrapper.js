@@ -144,6 +144,11 @@ describe('GitHubWrapper', () => {
 
       Octokit.mockImplementation(() => {
         return {
+          checks: {
+            listForRef: jest.fn().mockImplementation(async () => {
+              return { data }
+            })
+          },
           paginate: jest.fn().mockImplementation(() => data),
           pulls: {
             list: {
@@ -153,7 +158,7 @@ describe('GitHubWrapper', () => {
             }
           },
           repos: {
-            getCombinedStatusForRef: jest.fn().mockImplementation(() => {
+            getCombinedStatusForRef: jest.fn().mockImplementation(async () => {
               return { data }
             })
           }
