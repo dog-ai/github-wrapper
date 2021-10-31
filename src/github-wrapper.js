@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2019, Hugo Freire <hugo@dog.ai>. All rights reserved.
+ * Copyright (C) 2021, Hugo Freire <hugo@dog.ai>. All rights reserved.
  */
 
 const _ = require('lodash')
@@ -27,12 +27,19 @@ class GitHubWrapper {
     return login
   }
 
-  async getUserRepos () {
+  async getUserRepos (topics = []) {
     const options = this._octokit.repos.list.endpoint.merge({ affiliation: 'owner' })
 
     const repos = await this._octokit.paginate(options)
 
-    return _.map(repos, 'name')
+    return _(repos)
+      .filter(repo =>
+        _.isEmpty(topics) || _.isEmpty(repo.topics)
+          ? true
+          : repo.topics.some(topic => topics.includes(topic))
+      )
+      .map('name')
+      .valueOf()
   }
 
   async getUserOrgs () {
@@ -43,12 +50,19 @@ class GitHubWrapper {
     return _.map(orgs, 'login')
   }
 
-  async getOrgRepos (org) {
+  async getOrgRepos (org, topics = []) {
     const options = this._octokit.repos.listForOrg.endpoint.merge({ org })
 
     const repos = await this._octokit.paginate(options)
 
-    return _.map(repos, 'name')
+    return _(repos)
+      .filter(repo =>
+        _.isEmpty(topics) || _.isEmpty(repo.topics)
+          ? true
+          : repo.topics.some(topic => topics.includes(topic))
+      )
+      .map('name')
+      .valueOf()
   }
 
   async getRepoPullRequestsByState (owner, repo, state) {
