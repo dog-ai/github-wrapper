@@ -34,7 +34,7 @@ class GitHubWrapper {
 
     return _(repos)
       .filter(repo =>
-        _.isEmpty(topics) || _.isEmpty(repo.topics)
+        _.isEmpty(topics)
           ? true
           : repo.topics.some(topic => topics.includes(topic))
       )
@@ -57,7 +57,7 @@ class GitHubWrapper {
 
     return _(repos)
       .filter(repo =>
-        _.isEmpty(topics) || _.isEmpty(repo.topics)
+        _.isEmpty(topics)
           ? true
           : repo.topics.some(topic => topics.includes(topic))
       )
